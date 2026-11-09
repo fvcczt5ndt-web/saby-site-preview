@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SABY — Modern Technology Studio</title>
+<meta name="description" content="">
+<meta name="theme-color" content="#07070c">
+<link rel="icon" href="assets/img/saby-mark.png" type="image/png">
+<link rel="preload" href="assets/fonts/inter-tight-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css">
+<script>
+  /* set language before first paint (no flash); ?lang=ar|en overrides */
+  (function () {
+    var q = /[?&]lang=(ar|en)/.exec(location.search);
+    var l = q ? q[1] : (localStorage.getItem('saby-lang') || 'en');
+    document.documentElement.lang = l;
+    document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';
+    if (sessionStorage.getItem('saby-seen') || matchMedia('(prefers-reduced-motion: reduce)').matches || /[?&]noloader/.test(location.search)) document.documentElement.classList.add('no-loader');
+  })();
+</script>
+</head>
+<body>
+<a class="skip" href="#main" data-t="nav.skip"></a>
+
+<!-- loader -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader__word" id="loaderWord"></div>
+</div>
+
+<!-- nav -->
+<header class="nav" id="nav">
+  <a class="nav__brand" href="#top" data-a="aria-label:nav.home">
+    <img src="assets/img/saby-mark.png" alt="" width="36" height="36" class="nav__mark">
+    <span class="nav__name">SABY</span>
+  </a>
+  <nav class="nav__links" data-a="aria-label:nav.label" id="navLinks"></nav>
+  <div class="nav__right">
+    <button class="lang" id="langBtn" type="button" data-a="aria-label:nav.langAria"><span data-t="nav.langLabel"></span></button>
+    <a class="btn btn--sm btn--ghost nav__cta" href="#contact"><span class="roll"><span data-t="nav.cta"></span><span data-t="nav.cta" aria-hidden="true"></span></span></a>
+    <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="sheet" data-a="aria-label:nav.menu"><i></i><i></i></button>
+  </div>
+</header>
+<div class="sheet" id="sheet" aria-hidden="true">
+  <nav id="sheetLinks"></nav>
+  <a class="btn btn--primary" href="#contact"><span data-t="nav.cta"></span></a>
+</div>
+
+<main id="main">
+  <!-- hero -->
+  <section class="hero" id="top">
+    <div class="orbs" aria-hidden="true">
+      <span class="orb orb--a"></span><span class="orb orb--b"></span><span class="orb orb--c"></span>
+    </div>
+    <canvas class="stars" id="stars" aria-hidden="true"></canvas>
+    <div class="hero__inner">
+      <p class="eyebrow hero__eyebrow" data-t="hero.eyebrow" data-reveal></p>
+      <h1 class="hero__title" id="heroTitle" data-words="hero.title"></h1>
+      <p class="hero__lead" data-t="hero.lead" data-reveal></p>
+      <div class="hero__cta" data-reveal>
+        <a class="btn btn--primary" href="#contact"><span class="btn__glow" aria-hidden="true"></span><span class="roll"><span data-t="hero.primary"></span><span data-t="hero.primary" aria-hidden="true"></span></span><svg class="arr" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 12L12 4M6 4h6v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a class="btn btn--ghost" href="#expertise"><span class="roll"><span data-t="hero.secondary"></span><span data-t="hero.secondary" aria-hidden="true"></span></span></a>
+      </div>
+    </div>
+    <div class="scrollcue" aria-hidden="true"><span data-t="hero.scroll"></span><i></i></div>
+  </section>
+
+  <!-- manifesto: scroll-scrubbed word fill -->
+  <section class="manifesto" id="manifesto" aria-labelledby="mLabel">
+    <div class="manifesto__pin">
+      <p class="eyebrow" id="mLabel" data-t="manifesto.label"></p>
+      <p class="manifesto__text" id="manifestoText" data-scrub="manifesto.text"></p>
+    </div>
+  </section>
+
+  <!-- cinematic band -->
+  <section class="band" aria-hidden="true">
+    <div class="band__img"><img src="assets/img/hero-desk.webp" alt="" width="1920" height="1080" loading="lazy"></div>
+    <div class="band__shade"></div>
+    <span class="band__cap" data-t="band.caption"></span>
+  </section>
+
+  <!-- expertise -->
+  <section class="section" id="expertise">
+    <div class="wrap">
+      <p class="eyebrow" data-t="expertise.eyebrow" data-reveal></p>
+      <h2 class="h2" data-html="expertise.title" data-reveal></h2>
+      <div class="grid grid--3" id="expertiseGrid"></div>
+    </div>
+  </section>
+
+  <!-- ticker -->
+  <div class="ticker" aria-hidden="true"><div class="ticker__track" id="tickerTrack"></div></div>
+
+  <!-- why -->
+  <section class="section" id="why">
+    <div class="wrap">
+      <p class="eyebrow" data-t="why.eyebrow" data-reveal></p>
+      <h2 class="h2" data-html="why.title" data-reveal></h2>
+      <div class="grid grid--3 grid--why" id="whyGrid"></div>
+    </div>
+  </section>
+
+  <!-- contact -->
+  <section class="section section--cta" id="contact">
+    <div class="wrap">
+      <div class="cta" data-reveal>
+        <div class="orbs orbs--cta" aria-hidden="true"><span class="orb orb--a"></span><span class="orb orb--c"></span></div>
+        <p class="eyebrow" data-t="cta.eyebrow"></p>
+        <h2 class="h2 h2--xl" data-html="cta.title"></h2>
+        <p class="cta__text" data-t="cta.text"></p>
+        <a class="btn btn--primary btn--lg" href="mailto:info@nexgen.bh"><span class="btn__glow" aria-hidden="true"></span><span class="roll"><span data-t="cta.button"></span><span data-t="cta.button" aria-hidden="true"></span></span><svg class="arr" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 12L12 4M6 4h6v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <dl class="cta__lines">
+          <div><dt data-t="cta.phoneLabel"></dt><dd><a dir="ltr" id="phoneLink" href="tel:+97336600911"></a></dd></div>
+          <div><dt data-t="cta.emailLabel"></dt><dd><a dir="ltr" id="emailLink" href="mailto:info@nexgen.bh"></a></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <a class="nav__brand" href="#top" data-a="aria-label:nav.home"><img src="assets/img/saby-mark.png" alt="" width="32" height="32" class="nav__mark"><span class="nav__name">SABY</span></a>
+    <p data-t="footer.line"></p>
+    <p class="foot__r"><span data-t="footer.rights"></span> <a href="#top" data-t="footer.top"></a></p>
+  </div>
+</footer>
+
+<script src="en-content.js"></script>
+<script src="ar-content.js"></script>
+<script src="assets/js/site.js"></script>
+</body>
+</html>
