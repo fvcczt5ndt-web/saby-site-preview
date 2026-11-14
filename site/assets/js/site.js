@@ -20,7 +20,7 @@
   }
 
   /* ---------------- render ---------------- */
-  var scrubWords = [];
+  var typingTimer = 0, manifestoObserver = null;
   function render(l) {
     lang = l; var t = C[l];
     root.lang = l; root.dir = t.dir;
@@ -49,16 +49,9 @@
       }).join('');
     }).join('');
 
-    /* manifesto: per-word base + overlay fill */
-    var m = $('#manifestoText'); m.setAttribute('aria-label', get(t, 'manifesto.text').replace(/\*/g, ''));
-    m.innerHTML = parts(get(t, 'manifesto.text')).map(function (p) {
-      return p.t.split(/(\s+)/).map(function (w) {
-        if (!w) return '';
-        if (/^\s+$/.test(w)) return ' ';
-        return '<span class="mw' + (p.a ? ' acc-w' : '') + '" aria-hidden="true">' + esc(w) + '<i>' + esc(w) + '</i></span>';
-      }).join('');
-    }).join('');
-    scrubWords = $$('.mw i', m);
+    /* manifesto: complete accessible sentence + a visual one-time typing layer */
+    var m = $('#manifestoText');
+    m.dataset.source = get(t, 'manifesto.text');
 
     /* cards */
     var ic = '<svg class="card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M3 12h18"/></svg>';
@@ -76,14 +69,14 @@
     $('#phoneLink').textContent = t.cta.phone; $('#emailLink').textContent = t.cta.email;
     $('#emailLink').href = 'mailto:' + t.cta.email;
 
-    stagger(); observeReveals(); bindSpotlight(); measure(); onScroll();
+    stagger(); observeReveals(); bindSpotlight(); setupManifestoTyping(); vh = innerHeight; onScroll();
   }
 
   /* ---------------- reveal (opacity 1s ease-io, stagger 200ms like Hexaflow) ---------------- */
   var io;
   function stagger() {
     $$('.grid').forEach(function (g) { $$('[data-reveal]', g).forEach(function (e, i) { e.style.setProperty('--d', (i % 3) * 200 + 'ms'); }); });
-    $$('.hero__inner [data-reveal]').forEach(function (e, i) { e.style.setProperty('--d', (900 + i * 200) + 'ms'); });
+    $$('.hero__inner [data-reveal]').forEach(function (e, i) { e.style.setProperty('--d', (420 + i * 100) + 'ms'); });
   }
   function observeReveals() {
     if (io) io.disconnect();
@@ -104,41 +97,58 @@
     if (root.classList.contains('no-loader')) { startHero(); return; }
     W.innerHTML = C[lang].loader.word.split('').map(function (c) { return '<span>' + c + '</span>'; }).join('');
     var sp = $$('span', W);
-    sp.forEach(function (s, i) { setTimeout(function () { s.classList.add('on'); }, 350 + i * 260); });
+    sp.forEach(function (s, i) { setTimeout(function () { s.classList.add('on'); }, 90 + i * 95); });
+    setTimeout(startHero, 330);
     setTimeout(function () {
       L.classList.add('is-done'); sessionStorage.setItem('saby-seen', '1');
-      setTimeout(startHero, 120);
-    }, 350 + sp.length * 260 + 500);
+    }, 90 + sp.length * 95 + 250);
   }
 
-  /* ---------------- manifesto scrub ---------------- */
-  var sec, secTop = 0, secH = 0, vh = 0, cur = 0, target = 0, raf = 0;
-  function measure() {
-    sec = $('#manifesto'); vh = innerHeight;
-    secTop = sec.getBoundingClientRect().top + scrollY; secH = sec.offsetHeight;
+  /* ---------------- manifesto: autonomous typing, never scrubbed by scroll ---------------- */
+  function manifestoRich(raw) {
+    return parts(raw).map(function (p) {
+      return p.a ? '<span class="manifesto__accent">' + esc(p.t) + '</span>' : esc(p.t);
+    }).join('');
   }
-  function paint() {
-    var n = scrubWords.length, p = cur;
-    for (var i = 0; i < n; i++) {
-      var f = clamp(p * (n + 2) - i, 0, 1);      /* each word fills over ~1 word-width of scroll */
-      scrubWords[i].style.width = (f * 100).toFixed(1) + '%';
+  function setupManifestoTyping() {
+    clearTimeout(typingTimer);
+    if (manifestoObserver) manifestoObserver.disconnect();
+    var m = $('#manifestoText'), raw = m.dataset.source || '', plain = raw.replace(/\*/g, '');
+    m.setAttribute('aria-label', plain);
+    m.classList.remove('is-typing', 'is-complete');
+    m.innerHTML = '<span class="manifesto__typed" aria-hidden="true"></span><span class="manifesto__cursor" aria-hidden="true"></span>';
+    var shown = $('.manifesto__typed', m), index = 0, started = false;
+    function complete() {
+      shown.innerHTML = manifestoRich(raw);
+      m.classList.remove('is-typing'); m.classList.add('is-complete');
     }
+    function typeNext() {
+      if (document.hidden) { typingTimer = setTimeout(typeNext, 120); return; }
+      index += 1; shown.textContent = plain.slice(0, index);
+      if (index >= plain.length) { complete(); return; }
+      var c = plain.charAt(index - 1), delay = lang === 'ar' ? 24 : 19;
+      if (/\s/.test(c)) delay = 10;
+      if (/[,،:؛]/.test(c)) delay = 110;
+      if (/[.!؟?]/.test(c)) delay = 210;
+      typingTimer = setTimeout(typeNext, delay);
+    }
+    function start() {
+      if (started) return; started = true; m.classList.add('is-typing');
+      typingTimer = setTimeout(typeNext, 180);
+    }
+    if (reduce || !('IntersectionObserver' in window)) { complete(); return; }
+    manifestoObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        manifestoObserver.disconnect(); start();
+      });
+    }, { threshold: 0.38, rootMargin: '0px 0px -8% 0px' });
+    manifestoObserver.observe(m);
   }
-  function loop() {
-    cur += (target - cur) * 0.14;
-    if (Math.abs(target - cur) < 0.0004) cur = target;
-    paint();
-    raf = cur === target ? 0 : requestAnimationFrame(loop);
-  }
+
+  var vh = innerHeight;
   function onScroll() {
     var y = scrollY;
-    if (!reduce) {
-      target = clamp((y - secTop + vh * 0.15) / ((secH - vh * 1.05) * 0.85), 0, 1);
-      if (!raf) raf = requestAnimationFrame(loop);
-      /* band parallax */
-      var b = $('.band__img'), br = $('.band').getBoundingClientRect();
-      if (br.bottom > 0 && br.top < vh) b.style.transform = 'translate3d(0,' + ((br.top + br.height / 2 - vh / 2) * -0.16).toFixed(1) + 'px,0)';
-    }
     /* nav hide/show */
     var nav = $('#nav');
     nav.classList.toggle('is-hidden', y > lastY && y > 240 && !$('#sheet').classList.contains('is-open'));
@@ -150,7 +160,7 @@
   }
   var lastY = 0;
   addEventListener('scroll', onScroll, { passive: true });
-  addEventListener('resize', function () { measure(); onScroll(); sizeStars(); });
+  addEventListener('resize', function () { vh = innerHeight; onScroll(); sizeStars(); });
 
   /* ---------------- card spotlight ---------------- */
   function bindSpotlight() {
@@ -185,8 +195,26 @@
     requestAnimationFrame(function () { requestAnimationFrame(startHero); });
   });
 
-  /* ---------------- starfield (tiny canvas, paused when hero is off-screen) ---------------- */
+  /* ---------------- interactive hero field: pointer/touch depth + responsive stars ---------------- */
   var cv = $('#stars'), cx = cv.getContext('2d'), stars = [], sw = 0, sh = 0, dpr = 1, visible = true, sraf = 0;
+  var hero = $('.hero'), heroOrbs = $('.hero > .orbs');
+  var field = { active: false, px: 0, py: 0, tx: 0, ty: 0, x: 0, y: 0 };
+  function bindHeroInteraction() {
+    if (reduce) return;
+    function point(e) {
+      var r = hero.getBoundingClientRect();
+      field.px = e.clientX - r.left; field.py = e.clientY - r.top;
+      field.tx = clamp((field.px / r.width - .5) * 2, -1, 1);
+      field.ty = clamp((field.py / r.height - .5) * 2, -1, 1);
+      field.active = true;
+    }
+    function reset() { field.active = false; field.tx = 0; field.ty = 0; }
+    hero.addEventListener('pointermove', point, { passive: true });
+    hero.addEventListener('pointerdown', point, { passive: true });
+    hero.addEventListener('pointerleave', reset);
+    hero.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') reset(); });
+    hero.addEventListener('pointercancel', reset);
+  }
   function sizeStars() {
     dpr = Math.min(devicePixelRatio || 1, 2);
     var r = cv.getBoundingClientRect(); sw = r.width; sh = r.height;
@@ -198,17 +226,33 @@
   function drawStars(t) {
     cx.clearRect(0, 0, sw, sh);
     for (var i = 0; i < stars.length; i++) {
-      var s = stars[i], a = reduce ? .5 : .25 + .5 * (.5 + .5 * Math.sin(t / 1000 * s.s + s.p));
-      cx.fillStyle = 'rgba(210,210,255,' + a.toFixed(3) + ')'; cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 6.283); cx.fill();
+      var s = stars[i], x = s.x, y = s.y, a = reduce ? .5 : .25 + .5 * (.5 + .5 * Math.sin(t / 1000 * s.s + s.p));
+      if (field.active) {
+        var dx = x - field.px, dy = y - field.py, distance = Math.sqrt(dx * dx + dy * dy), radius = coarse ? 112 : 156;
+        if (distance > 0 && distance < radius) {
+          var force = (1 - distance / radius) * (coarse ? 8 : 11);
+          x += dx / distance * force; y += dy / distance * force;
+        }
+      }
+      cx.fillStyle = 'rgba(210,210,255,' + a.toFixed(3) + ')'; cx.beginPath(); cx.arc(x, y, s.r, 0, 6.283); cx.fill();
     }
   }
-  function starLoop(t) { if (visible && !reduce) drawStars(t); sraf = requestAnimationFrame(starLoop); }
-  new IntersectionObserver(function (e) { visible = e[0].isIntersecting; }).observe($('.hero'));
+  function starLoop(t) {
+    if (!visible || reduce) { sraf = 0; return; }
+    field.x += (field.tx - field.x) * .1; field.y += (field.ty - field.y) * .1;
+    heroOrbs.style.transform = 'translate3d(' + (field.x * 12).toFixed(2) + 'px,' + (field.y * 9).toFixed(2) + 'px,0)';
+    drawStars(t); sraf = requestAnimationFrame(starLoop);
+  }
+  new IntersectionObserver(function (e) {
+    visible = e[0].isIntersecting;
+    if (visible && !reduce && !sraf) sraf = requestAnimationFrame(starLoop);
+    if (!visible && sraf) { cancelAnimationFrame(sraf); sraf = 0; }
+  }).observe(hero);
 
   /* ---------------- boot ---------------- */
   render(lang);
-  sizeStars(); if (!reduce) sraf = requestAnimationFrame(starLoop);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); onScroll(); });
-  addEventListener('load', function () { measure(); onScroll(); });
+  bindHeroInteraction(); sizeStars(); if (!reduce) sraf = requestAnimationFrame(starLoop);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { vh = innerHeight; onScroll(); });
+  addEventListener('load', function () { vh = innerHeight; onScroll(); });
   runLoader();
 })();
